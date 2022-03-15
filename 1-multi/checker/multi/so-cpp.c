@@ -39,7 +39,9 @@ int main(int argc, char **argv) {
     char input[256];
     char tmp1[256];
     char tmp2[256];
-    char* tok;
+    char cond[256];
+    char *tok;
+    long ifPointer = -1;
     pair* p;
     if(argc == 1) {
         fgets(input, 255, stdin);
@@ -51,25 +53,59 @@ int main(int argc, char **argv) {
                 inFile = fopen(argv[i], "r");
                 fgets(input, 255, (FILE*)inFile);
                 strcpy(tmp1, input);
-                if(strcmp(strtok(tmp1, " "), "#define") == 0) {
+                tok = strtok(tmp1, " ");
+                if(strcmp(tok, "#define") == 0) {
                     p = malloc(sizeof(pair));
                     p->symbol = malloc(256);
                     strcpy(p->symbol,strtok(NULL, " "));
                     p->mapping =malloc(256);
-                    strcpy(p->mapping, strtok(NULL, "\n"));
+                    char* multiLine;
+                    char tmpMulti[256];
+                    char multilineValue[256] = "";
+                    multiLine = strtok(NULL, "\n");
+                    if(multiLine[strlen(multiLine) - 1] == '\\') {
+                        strncat(multilineValue, multiLine, strlen(multiLine)-1);
+                        fgets(input, 255, (FILE*)inFile);
+                        strcpy(tmpMulti, input);
+                        multiLine = strtok(tmpMulti, "\t");
+                        while(multiLine[strlen(multiLine)-2] == '\\') {
+                            strncat(multilineValue, multiLine, strlen(multiLine)-2);
+                            fgets(input, 255, (FILE*)inFile);
+                            strcpy(tmpMulti, input);
+                            multiLine = strtok(tmpMulti, "\t");
+                        }
+                        strncat(multilineValue, multiLine, strlen(multiLine)-1);
+                        strcpy(p->mapping, multilineValue);
+                    } else {
+                        strcpy(p->mapping, multiLine);
+                    }
                     if(hashSearch(hashTable, index, p->symbol) == NULL) {
                         hashTable[index++] = p;
                     }
-                } else if(strcmp(strtok(tmp1, " "), "#undef") == 0) {
+                } else if(strcmp(tok, "#undef") == 0) {
                     free(hashTable[index-1]->mapping);
                     free(hashTable[index-1]->symbol);
                     free(hashTable[index-1]);
                     index--;
+                } else if(strcmp(tok, "#if") == 0) {
+                    printf("ok");
+                    strcpy(cond,strtok(NULL, " "));
+                    // char ifTmp[256];
+                    if(atoi(cond)) {
+                        fgets(input, 256, (FILE*)inFile);
+                        while(input[0] == '#') {
+                            printf("%s", input);
+                            fgets(input, 256, (FILE*)inFile);
+                        }
+                    }
                 } else {
                     printf("%s", input);
                 }
                 while (1)
                 {
+                    if(ifPointer != -1) {
+                        fseek(inFile, ifPointer, SEEK_SET);
+                    }
                     if(!fgets(input, 256, (FILE*)inFile) || feof(inFile) || ferror(inFile)) {
                         break;
                     }
@@ -79,9 +115,12 @@ int main(int argc, char **argv) {
                     }
                     strcpy(tmp1, input);
                     strcpy(tmp2, input);
-                    if(strcmp(strtok(tmp1, " "), "#define") == 0) {
+                    tok = strtok(tmp1, " ");
+                    // printf("%s \n", tok);
+                    
+                    if(strcmp(tok, "#define") == 0) {
+                        ifPointer = -1;
                         pair* p = malloc(sizeof(pair));
-                        p = malloc(sizeof(pair));
                         p->symbol = malloc(256);
                         strcpy(p->symbol,strtok(NULL, " "));
                         p->mapping =malloc(256);
@@ -89,14 +128,86 @@ int main(int argc, char **argv) {
                         if(hashSearch(hashTable, index, p->symbol) == NULL) {
                             hashTable[index++] = p;
                         }
-                    } else if(strcmp(strtok(tmp1, " "), "#undef") == 0) {
+                    } else if(strcmp(tok, "#undef") == 0) {
+                        ifPointer = -1;
                         free(hashTable[index-1]->mapping);
                         free(hashTable[index-1]->symbol);
                         free(hashTable[index-1]);
                         index--;
+                    } else if(strcmp(tok, "#if") == 0) {
+                        strcpy(cond,strtok(NULL, " "));
+                        if(atoi(cond)) {
+                            fgets(input, 256, (FILE*)inFile);
+                            while(input[0] != '#') {
+                                printf("%s", input);
+                                ifPointer = ftell(inFile);
+                                fgets(input, 256, (FILE*)inFile);
+                            }
+                        } else {
+                            fgets(input, 256, (FILE*)inFile);
+                            while(input[0] != '#') {
+                                ifPointer = ftell(inFile);
+                                fgets(input, 256, (FILE*)inFile);
+                            }
+                        }
+                    } else if(strcmp(input, "#else\n") == 0) {
+                        if(!atoi(cond)) {
+                            fgets(input, 256, (FILE*)inFile);
+                            while(input[0] != '#') {
+                                printf("%s", input);
+                                ifPointer = ftell(inFile);
+                                fgets(input, 256, (FILE*)inFile);
+                            }
+                        } else {
+                            fgets(input, 256, (FILE*)inFile);
+                            while(input[0] != '#') {
+                                ifPointer = ftell(inFile);
+                                fgets(input, 256, (FILE*)inFile);
+                            }
+                        }
+                    } else if(strcmp(tok, "#elif") == 0) {
+                        strcpy(cond,strtok(NULL, " "));
+                        if(atoi(cond)) {
+                            fgets(input, 256, (FILE*)inFile);
+                            while(input[0] != '#') {
+                                printf("%s", input);
+                                ifPointer = ftell(inFile);
+                                fgets(input, 256, (FILE*)inFile);
+                            }
+                        } else {
+                            fgets(input, 256, (FILE*)inFile);
+                            while(input[0] != '#') {
+                                ifPointer = ftell(inFile);
+                                fgets(input, 256, (FILE*)inFile);
+                            }
+                        }
+                    } else if(strcmp(input, "#endif\n") == 0) {
+                        ifPointer = -1;
+                    } else if(strcmp(tok, "#ifdef") == 0) {
+                        strcpy(cond,strtok(NULL, " \n"));
+                        int tmpCond = 0;
+                        for(int i = 0; i < index; i++) {
+                            if(strcmp(hashTable[i]->mapping, cond) == 0) {
+                                tmpCond = 1;
+                                break;
+                            }
+                        }
+                        if(tmpCond) {
+                            fgets(input, 256, (FILE*)inFile);
+                            while(input[0] != '#') {
+                                printf("%s", input);
+                                ifPointer = ftell(inFile);
+                                fgets(input, 256, (FILE*)inFile);
+                            }
+                        } else {
+                            fgets(input, 256, (FILE*)inFile);
+                            while(input[0] != '#') {
+                                ifPointer = ftell(inFile);
+                                fgets(input, 256, (FILE*)inFile);
+                            }
+                        }
                     } else {
-                        
-                            
+                            ifPointer = -1;
                             printf("%s", input);
                     }
                 }       
@@ -127,9 +238,14 @@ int main(int argc, char **argv) {
                         strncpy(tokenD, &argv[i][2], 255);
                         p = malloc(sizeof(pair));
                         p->symbol = malloc(256);
-                        strcpy(p->symbol, strtok(tokenD, "="));
+                        strcpy(p->symbol, strtok(tokenD, "= "));
                         p->mapping = malloc(256);
-                        strcpy(p->mapping,  strtok(NULL, "="));
+                        char *tmpTok = strtok(NULL, "=");
+                        if(tmpTok != NULL) {
+                            strcpy(p->mapping, tmpTok);
+                        } else {
+                            strcpy(p->mapping, "NULL");
+                        }
                         if(hashSearch(hashTable, index, p->symbol) == NULL) {
                             hashTable[index++] = p;
                         }
@@ -139,75 +255,7 @@ int main(int argc, char **argv) {
         }
         
     }
-    // } else if(argc == 2) {
-    //     if(argv[1][0] == '_') {
-    //         inFile = fopen(argv[1], "r");
-    //         fgets(input, 255, (FILE*)inFile);
-    //         strcpy(tmp1, input);
-    //         if(strcmp(strtok(tmp1, " "), "#define") == 0) {
-    //             p = malloc(sizeof(pair));
-    //             p->symbol = malloc(256);
-    //             strcpy(p->symbol,strtok(NULL, " "));
-    //             p->mapping =malloc(256);
-    //             strcpy(p->mapping, strtok(NULL, "\n"));
-    //             if(hashSearch(hashTable, index, p->symbol) == NULL) {
-    //                 hashTable[index++] = p;
-    //             }
-    //         } else if(strcmp(strtok(tmp1, " "), "#undef") == 0) {
-    //             free(hashTable[index-1]->mapping);
-    //             free(hashTable[index-1]->symbol);
-    //             free(hashTable[index-1]);
-    //             index--;
-    //         } else {
-    //             printf("%s", input);
-    //         }
-    //         while (1)
-    //         {
-    //             if(!fgets(input, 256, (FILE*)inFile) || feof(inFile) || ferror(inFile)) {
-    //                 break;
-    //             }
-    //             for (int i = 0; i < index; i++)
-    //             {
-    //                 strreplace(input, hashTable[i]->symbol, hashTable[i]->mapping);
-    //             }
-    //             strcpy(tmp1, input);
-    //             strcpy(tmp2, input);
-    //             if(strcmp(strtok(tmp1, " "), "#define") == 0) {
-    //                 pair* p = malloc(sizeof(pair));
-    //                 p = malloc(sizeof(pair));
-    //                 p->symbol = malloc(256);
-    //                 strcpy(p->symbol,strtok(NULL, " "));
-    //                 p->mapping =malloc(256);
-    //                 strcpy(p->mapping, strtok(NULL, "\n"));
-    //                 if(hashSearch(hashTable, index, p->symbol) == NULL) {
-    //                     hashTable[index++] = p;
-    //                 }
-    //             } else if(strcmp(strtok(tmp1, " "), "#undef") == 0) {
-    //                 free(hashTable[index-1]->mapping);
-    //                 free(hashTable[index-1]->symbol);
-    //                 free(hashTable[index-1]);
-    //                 index--;
-    //             } else {
-                    
-                        
-    //                     printf("%s", input);
-    //             }
-    //         }       
-    //         fclose(inFile);
-    //     } else if(argv[1][0] == '-' && argv[1][1] == 'D') {
 
-    //     }
-    // } else if(argc == 3) {
-    //     if(argv[1][0] == '_' && argv[2][0] == '_') {
-    //         inFile = fopen(argv[1], "r");
-    //         oFile = fopen(argv[2], "w+");
-    //         fgets(input, 255, (FILE*)inFile);
-    //         // input[strlen(input)-1] = '\0';
-    //         fputs(input,oFile);
-    //         fclose(inFile);
-    //         fclose(oFile);
-    //     }
-    // }
     for (int i = 0; i < index; i++)
     {
         free(hashTable[i]->symbol);
