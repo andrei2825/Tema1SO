@@ -271,8 +271,8 @@ int main(int argc, char **argv)
 					memcpy(fileName, fielToken + 1,
 					       strlen(fielToken) - 2);
 					if (!fileCheck(fileName)) {
-                        fprintf( stderr, "Invalid file");
-						exit(0);
+						fprintf(stderr, "Invalid file");
+						exit(1);
 					} else {
 						// FILE *includeFile;
 					}
@@ -573,6 +573,9 @@ int main(int argc, char **argv)
 						}
 					}
 				}
+			} else {
+				fprintf(stderr, "Invalid input");
+				exit(1);
 			}
 		}
 	}
