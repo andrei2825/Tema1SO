@@ -1,5 +1,42 @@
+TEMA1-SO
+Nume: Porumb Andrei-Cornel
+Grupa: 336CA
 
-Pentru verificarea temei copiati executabilul tema1 in
-acelasi director cu scriptul de testare (run_all.sh) si apelati:
+Consider ca tema este una folositoare deoarece aceasta m-a ajutat sa 
+inteleg mai bine functionalitatea unui preprocesor si dificultatile
+care pot aparea in incercarea de a crea unul.
 
-make -f Makefile.checker
+Cred ca implementarea mea este una destul de basic si ca ar putea fi 
+imbunatatia.
+
+Implementare:
+Am implementat cazurile in care nu primim argumente la rulare,
+cand primim fisiere de input, output si parametrul -D pentru definiri.
+Am implementat cerinta pentru define, if, elif, ifdef si cea de include cand 
+se primeste un fisier invalid.
+
+Nu am implementat cazul cu argumentul -I sau cel cu argumentul -o (care din 
+cate am vazut nu exista in teste) si cerinta de include cand se primeste 
+un fisier valid.
+
+Tot la lucruri neimplementate voi adauga : 
+-cazurile in care nu se dau argumente la rulare si se ofera o secventa de cod la stdin
+-cazurile in care se da un fisier de iesire iar cel de intrare are un cod 
+-cazul in care exista o linie cu mai mult de 2 aparitii a unei valri retinute
+in hashMap.
+
+Dificultati intampinate: 
+Cand am incercat sa rulez scriptul de testare pe windows am primit cateva eroari de forma
+"'\r' command not found" si a trebuit sa caut o rezolvare online care insemna sa modific
+scriptul de testare.
+
+Lucruri interesante descoperite pe parcurs:
+Cat de greu e sa iti dai seama unde ai un memory leak cand lucrezi cu memmove :^)
+
+Cum se compileaza si ruleaza?
+make + scriptul de rulare, nothing fancy
+
+Bibliografie: 
+Inspiratie pentru functia de strreplace: 
+https://stackoverflow.com/questions/56043612/how-to-replace-a-part-of-a-string-with-another-substring
+
